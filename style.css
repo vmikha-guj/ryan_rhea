@@ -1,0 +1,140 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f7f3f0; /* Light cream/blush background */
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top */
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 600px; /* Max width for better readability on large screens */
+    width: 100%; /* Take full width on smaller screens */
+    margin-top: 20px; /* Space from top */
+}
+
+h1 {
+    color: #8c5b6b; /* Wedding-themed color */
+    margin-bottom: 10px;
+    font-size: 2.5em; /* Larger for mobile readability */
+}
+
+p {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+.input-group {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px; /* Space between input and button */
+}
+
+#guestNameInput {
+    flex-grow: 1; /* Input takes up available space */
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.2em;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#guestNameInput:focus {
+    border-color: #8c5b6b;
+}
+
+#searchButton {
+    padding: 12px 25px;
+    background-color: #8c5b6b; /* Matching theme color */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#searchButton:hover {
+    background-color: #6a4555; /* Darker shade on hover */
+}
+
+.results-box {
+    min-height: 100px; /* Give it some initial height */
+    background-color: #f0f8ff; /* Light blue background for results */
+    border: 1px solid #cceeff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 30px;
+    font-size: 1.3em; /* Larger results text */
+    text-align: left;
+    white-space: pre-wrap; /* Preserve newlines from JavaScript */
+    word-wrap: break-word; /* Break long words */
+    color: #333;
+    font-weight: bold; /* Make results stand out */
+    line-height: 1.4;
+    overflow-y: auto; /* Enable scrolling for many results */
+    max-height: 250px; /* Limit height for many results */
+}
+
+.table-layout {
+    margin-top: 20px;
+    position: relative; /* Needed for absolute positioning of blinking overlay */
+    display: inline-block; /* To contain the image and overlay correctly */
+}
+
+.table-layout h2 {
+    color: #8c5b6b;
+    margin-bottom: 15px;
+}
+
+.table-layout img {
+    max-width: 100%; /* Ensure image scales down on smaller screens */
+    height: auto;
+    display: block; /* Remove extra space below image */
+}
+
+/* Blinking Effect for the Overlay */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.blinking-overlay {
+    position: absolute;
+    background-color: rgba(255, 255, 0, 0.6); /* Yellow semi-transparent */
+    border: 3px solid #ff0; /* Bright yellow border */
+    border-radius: 5px; /* Slightly rounded corners */
+    animation: blink 1s infinite; /* 1 second duration, infinite loop */
+    pointer-events: none; /* Allows clicks to pass through to elements below */
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2em;
+    }
+    .input-group {
+        flex-direction: column; /* Stack input and button on small screens */
+    }
+    #guestNameInput, #searchButton {
+        width: 100%; /* Full width */
+        margin: 0;
+        margin-bottom: 10px; /* Space between stacked elements */
+    }
+    .container {
+        padding: 20px;
+    }
+    .results-box {
+        font-size: 1.1em;
+    }
+}
