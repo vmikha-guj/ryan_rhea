@@ -5,10 +5,11 @@ const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS
 // You'll need to get these manually (e.g., using an image editor to find pixel positions).
 // x, y are top-left coordinates. width, height are dimensions of the table area.
 const TABLE_COORDINATES = {
-    '1': { x: 50, y: 100, width: 80, height: 80 }, // Example: Table 1 at (50,100) with 80x80 size
-    '2': { x: 150, y: 120, width: 70, height: 70 },
-    '3': { x: 250, y: 90, width: 90, height: 90 },
-    '4': { x: 50, y: 200, width: 80, height: 80 },
+    '1': { x: 1262, y: 639, width: 1393, height: 765 }, // Example: Table 1 at (50,100) with 80x80 size
+    '2': { x: 1649, y: 756, width: 1515, height: 637 },
+    '3': { x: 1638, y: 914, width: 1766, height: 798 },
+    '4': { x: 1521, y: 925, width: 1381, height: 799 },
+    '5': { x: 1268, y: 909, width: 1137, height: 789 },
     // ... add all 33 of your tables here.
     // Use your image editing tool to get accurate x,y,width,height for each table on your actual map image.
     // For circular tables, use (x,y) as center and width/height as diameter for a rough square overlay.
