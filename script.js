@@ -1,8 +1,7 @@
-// REPLACE THIS WITH YOUR ACTUAL PUBLISHED CSV_URL from Google Sheets
+// Your PUBLISHED CSV URL from Google Sheets
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vScnPH8UkrCQhHc3YhtCQ_ZVyG9uDAvMlWb6zh-3uPf1IHhbcWn4q3RGqFrHPf-WILzOM-Nz87Odj8A/pub?output=csv';
 
 // IMPORTANT: Define coordinates for your tables on the image.
-// You'll need to get these manually (e.g., using an image editor to find pixel positions).
 // x, y are top-left coordinates. width, height are dimensions of the table area.
 const TABLE_COORDINATES = {
     '1': { x: 1048, y: 111, width: 134, height: 111 },
@@ -14,7 +13,8 @@ const TABLE_COORDINATES = {
     '7': { x: 1066, y: 434, width: 133, height: 112 },
     '8': { x: 1304, y: 440, width: 131, height: 107 },
     '9': { x: 1528, y: 449, width: 125, height: 113 },
-    // *** IMPORTANT: YOU NEED TO ADD THE REMAINING TABLES HERE (10 through 33) ***
+    // *** IMPORTANT: YOU MUST ADD THE REMAINING TABLES HERE (10 through 33) ***
+    // If a table number is found but no coordinates are provided, the box will not appear.
     // Example for a hypothetical Table 10:
     // '10': { x: XXX, y: YYY, width: WWW, height: HHH },
 };
@@ -53,7 +53,7 @@ function parseCSV(csv) {
     console.log(`Column Indices: First Name=${firstNameCol}, Last Name=${lastNameCol}, Table#=${tableNumCol}`); // Debug log
 
     if (firstNameCol === -1 || lastNameCol === -1 || tableNumCol === -1) {
-        throw new Error('CSV headers not found: First Name, Last Name, or Table#');
+        throw new Error('CSV headers not found: "First Name", "Last Name", or "Table#"');
     }
 
     const data = [];
@@ -64,13 +64,19 @@ function parseCSV(csv) {
         // A more robust split that handles commas within quotes
         const values = line.match(/(?:[^,"']+|"[^"]*")+/g).map(v => v.replace(/^"|"$/g, '').trim());
 
+        const firstName = values[firstNameCol] ? values[firstNameCol].toLowerCase() : '';
+        const lastName = values[lastNameCol] ? values[lastNameCol].toLowerCase() : '';
+        const tableNumber = values[tableNumCol] || '';
+
         data.push({
-            firstName: values[firstNameCol] ? values[firstNameCol].toLowerCase() : '',
-            lastName: values[lastNameCol] ? values[lastNameCol].toLowerCase() : '',
+            firstName: firstName,
+            lastName: lastName,
             originalFirstName: values[firstNameCol] || '', // Keep original for display
             originalLastName: values[lastNameCol] || '',
-            tableNumber: values[tableNumCol] || ''
+            tableNumber: tableNumber
         });
+        // Log what's being parsed for each entry (helpful for debugging specific names)
+        // console.log(`Parsed row ${i}: First='${firstName}', Last='${lastName}', Table='${tableNumber}'`);
     }
     return data;
 }
@@ -93,62 +99,46 @@ function searchGuest() {
     console.log('User Input (trimmed, lowercase):', inputName);
     console.log('Input parts (separated by space):', inputParts);
 
-    // 1. Prioritize Exact Full Name Match (if two or more parts in input)
-    // This is for inputs like "John Doe" matching "John" (First) and "Doe" (Last)
-    if (inputParts.length >= 2) {
-        const targetFirstName = inputParts[0];
-        const targetLastName = inputParts.slice(1).join(' '); // Handles multi-word last names
+    // Flexible Search Algorithm: Check if ALL input parts are present in the guest's combined name
+    // This allows for flexible ordering (e.g., "Michael Koshy" finding "Koshy Michael")
+    // and partial matches where all words in the input are found.
+    for (const guest of guestData) {
+        // Ensure guest.firstName and guest.lastName are treated as strings before combining
+        const guestFirstNameStr = String(guest.firstName || '').trim().toLowerCase();
+        const guestLastNameStr = String(guest.lastName || '').trim().toLowerCase();
+        
+        const guestFullNameInCSV = `${guestFirstNameStr} ${guestLastNameStr}`.trim();
 
-        console.log(`Attempting strict First+Last Name match: Target First='${targetFirstName}', Target Last='${targetLastName}'`);
+        // Check if ALL terms from the user's input are present anywhere in the combined guest name from CSV
+        const allInputPartsFound = inputParts.every(term => guestFullNameInCSV.includes(term));
 
-        for (const guest of guestData) {
-            // Optional: Uncomment the line below to see every comparison, can be very verbose for large lists
-            // console.log(`  Comparing with CSV guest: Original='${guest.originalFirstName} ${guest.originalLastName}', Processed: First='${guest.firstName}', Last='${guest.lastName}'`);
-
-            if (guest.firstName === targetFirstName && guest.lastName === targetLastName) {
-                foundGuests.push(guest);
-                console.log('Strict First+Last Name match found!');
-                break; // Found exact match, no need to search further
-            }
+        if (allInputPartsFound) {
+            foundGuests.push(guest);
         }
     }
 
-    // 2. Fallback to more flexible matching if no exact match found
-    if (foundGuests.length === 0) {
-        console.log('No strict First+Last match. Attempting more flexible search...');
-
-        const searchTerms = inputParts; // Use individual words from user input
-
-        for (const guest of guestData) {
-            // Ensure guest.firstName and guest.lastName are treated as strings before combining
-            const guestFirstNameStr = String(guest.firstName || '').trim().toLowerCase();
-            const guestLastNameStr = String(guest.lastName || '').trim().toLowerCase();
-            
-            const guestFullNameInCSV = `${guestFirstNameStr} ${guestLastNameStr}`.trim(); // Combine CSV names for search
-
-            // Check if ALL input parts are present anywhere in the combined guest name from CSV
-            // This ensures if you type "Koshy Michael", both "koshy" AND "michael" must exist in the guest's full name.
-            const allInputPartsFound = searchTerms.every(term => guestFullNameInCSV.includes(term));
-
-            if (allInputPartsFound) {
-                foundGuests.push(guest);
-            }
-        }
-        if (foundGuests.length > 0) {
-            console.log(`Flexible search found ${foundGuests.length} matches.`);
-        } else {
-            console.log('Flexible search found no matches.');
-        }
+    if (foundGuests.length > 0) {
+        console.log(`Flexible search found ${foundGuests.length} matches.`);
+    } else {
+        console.log('Flexible search found no matches.');
     }
 
     // Display results
     if (foundGuests.length === 1) {
         const guest = foundGuests[0];
-        resultsBox.innerHTML = `Your Table Number: <br><strong>Table ${guest.tableNumber}</strong><br>(${guest.originalFirstName} ${guest.originalLastName})`;
+        // Display only the table number for a single, unique match
+        resultsBox.innerHTML = `Your Table Number: <br><strong>Table ${guest.tableNumber}</strong>`;
         console.log('Single unique match found. Blinking table:', guest.tableNumber);
         blinkTableOnMap(guest.tableNumber);
     } else if (foundGuests.length > 1) {
         let message = 'Multiple matches. Please find your name and table:\n\n';
+        // Sort for consistent display order (e.g., alphabetically by full name)
+        foundGuests.sort((a, b) => {
+            const nameA = `${a.originalFirstName} ${a.originalLastName}`.toLowerCase();
+            const nameB = `${b.originalFirstName} ${b.originalLastName}`.toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
         foundGuests.forEach(guest => {
             message += `${guest.originalFirstName} ${guest.originalLastName} - Table: ${guest.tableNumber}\n`;
         });
@@ -175,7 +165,7 @@ function blinkTableOnMap(tableNumber) {
     overlay.className = 'blinking-overlay';
     
     // Scale coordinates based on actual image size vs. coordinate source (if applicable)
-    // For simplicity, assuming image is at its natural size or scaled by CSS `max-width: 100%`
+    // This uses the natural (original) dimensions of the image vs. its currently rendered dimensions.
     const imgWidth = layoutImage.naturalWidth;
     const imgHeight = layoutImage.naturalHeight;
     const currentImgWidth = layoutImage.offsetWidth; // Rendered width
