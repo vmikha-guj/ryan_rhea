@@ -1,26 +1,22 @@
-// REPLACE THIS WITH YOUR ACTUAL PUBLISHED CSV URL from Google Sheets
-const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vScnPH8UkrCQhHc3YhtCQ_ZVyG9uDAvMlWb6zh-3uPf1IHhbcWn4q3RGqFrHPf-WILzOM-Nz87Odj8A/pub?gid=1446913663&single=true&output=csv'; 
- 
+// REPLACE THIS WITH YOUR ACTUAL PUBLISHED CSV_URL from Google Sheets
+const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vScnPH8UkrCQhHc3YhtCQ_ZVyG9uDAvMlWb6zh-3uPf1IHhbcWn4q3RGqFrHPf-WILzOM-Nz87Odj8A/pub?output=csv';
 
 // IMPORTANT: Define coordinates for your tables on the image.
 // You'll need to get these manually (e.g., using an image editor to find pixel positions).
 // x, y are top-left coordinates. width, height are dimensions of the table area.
 const TABLE_COORDINATES = {
-  '1': { x: 1048, y: 111, width: 134, height: 111 }, // Example: Table 1 at (50,100) with 80x80 size
+    '1': { x: 1048, y: 111, width: 134, height: 111 },
     '2': { x: 1305, y: 109, width: 126, height: 109 },
     '3': { x: 1421, y: 269, width: 132, height: 117 },
     '4': { x: 1175, y: 269, width: 125, height: 124 },
     '5': { x: 925, y: 261, width: 135, height: 121 },
-	'6': { x: 839, y: 432, width: 128, height: 112 },
-	'7': { x: 1066, y: 434, width: 133, height: 112 },
-	'8': { x: 1304, y: 440, width: 131, height: 107 },
-	'9': { x: 1528, y: 449, width: 125, height: 113 },
-	
-	
-	
-    // ... add all 33 of your tables here.
-    // Use your image editing tool to get accurate x,y,width,height for each table on your actual map image.
-    // For circular tables, use (x,y) as center and width/height as diameter for a rough square overlay.
+    '6': { x: 839, y: 432, width: 128, height: 112 },
+    '7': { x: 1066, y: 434, width: 133, height: 112 },
+    '8': { x: 1304, y: 440, width: 131, height: 107 },
+    '9': { x: 1528, y: 449, width: 125, height: 113 },
+    // *** IMPORTANT: YOU NEED TO ADD THE REMAINING TABLES HERE (10 through 33) ***
+    // Example for a hypothetical Table 10:
+    // '10': { x: XXX, y: YYY, width: WWW, height: HHH },
 };
 
 let guestData = []; // To store parsed guest list data
@@ -93,43 +89,55 @@ function searchGuest() {
     const inputParts = inputName.split(' ').filter(part => part.length > 0);
     let foundGuests = [];
 
-    // --- Debugging Logs for Search ---
-    console.log('--- New Search ---');
-    console.log('Input search term:', inputName);
-    console.log('Input parts (split by space):', inputParts);
-    // --- End Debugging Logs ---
+    console.log('--- New Search Initiated ---');
+    console.log('User Input (trimmed, lowercase):', inputName);
+    console.log('Input parts (separated by space):', inputParts);
 
-    // 1. Prioritize Exact Full Name Match
+    // 1. Prioritize Exact Full Name Match (if two or more parts in input)
+    // This is for inputs like "John Doe" matching "John" (First) and "Doe" (Last)
     if (inputParts.length >= 2) {
         const targetFirstName = inputParts[0];
         const targetLastName = inputParts.slice(1).join(' '); // Handles multi-word last names
 
-        console.log(`Attempting exact match: First='${targetFirstName}', Last='${targetLastName}'`); // Debug log
+        console.log(`Attempting strict First+Last Name match: Target First='${targetFirstName}', Target Last='${targetLastName}'`);
 
         for (const guest of guestData) {
-            // --- Debugging Logs for Each Guest Row ---
-            // Uncomment the line below if you want to see every comparison (can be verbose)
-            // console.log(`  Comparing with guest: Original='${guest.originalFirstName} ${guest.originalLastName}', Processed: First='${guest.firstName}', Last='${guest.lastName}'`);
-            // --- End Debugging Logs ---
+            // Optional: Uncomment the line below to see every comparison, can be very verbose for large lists
+            // console.log(`  Comparing with CSV guest: Original='${guest.originalFirstName} ${guest.originalLastName}', Processed: First='${guest.firstName}', Last='${guest.lastName}'`);
 
             if (guest.firstName === targetFirstName && guest.lastName === targetLastName) {
                 foundGuests.push(guest);
-                console.log('Exact match found in data!'); // Debug log
+                console.log('Strict First+Last Name match found!');
                 break; // Found exact match, no need to search further
             }
         }
     }
 
-    // 2. If no exact full name match, or if input was a single word, proceed with broader partial match
+    // 2. Fallback to more flexible matching if no exact match found
     if (foundGuests.length === 0) {
-        console.log('No exact match found. Falling back to partial search...'); // Debug log
-        for (const guest of guestData) {
-            const foundInFirst = inputParts.some(part => guest.firstName.includes(part));
-            const foundInLast = inputParts.some(part => guest.lastName.includes(part));
+        console.log('No strict First+Last match. Attempting more flexible search...');
 
-            if (foundInFirst || foundInLast) {
+        const searchTerms = inputParts; // Use individual words from user input
+
+        for (const guest of guestData) {
+            // Ensure guest.firstName and guest.lastName are treated as strings before combining
+            const guestFirstNameStr = String(guest.firstName || '').trim().toLowerCase();
+            const guestLastNameStr = String(guest.lastName || '').trim().toLowerCase();
+            
+            const guestFullNameInCSV = `${guestFirstNameStr} ${guestLastNameStr}`.trim(); // Combine CSV names for search
+
+            // Check if ALL input parts are present anywhere in the combined guest name from CSV
+            // This ensures if you type "Koshy Michael", both "koshy" AND "michael" must exist in the guest's full name.
+            const allInputPartsFound = searchTerms.every(term => guestFullNameInCSV.includes(term));
+
+            if (allInputPartsFound) {
                 foundGuests.push(guest);
             }
+        }
+        if (foundGuests.length > 0) {
+            console.log(`Flexible search found ${foundGuests.length} matches.`);
+        } else {
+            console.log('Flexible search found no matches.');
         }
     }
 
@@ -137,7 +145,7 @@ function searchGuest() {
     if (foundGuests.length === 1) {
         const guest = foundGuests[0];
         resultsBox.innerHTML = `Your Table Number: <br><strong>Table ${guest.tableNumber}</strong><br>(${guest.originalFirstName} ${guest.originalLastName})`;
-        console.log('Single match found. Blinking table:', guest.tableNumber); // Debug log
+        console.log('Single unique match found. Blinking table:', guest.tableNumber);
         blinkTableOnMap(guest.tableNumber);
     } else if (foundGuests.length > 1) {
         let message = 'Multiple matches. Please find your name and table:\n\n';
@@ -145,11 +153,10 @@ function searchGuest() {
             message += `${guest.originalFirstName} ${guest.originalLastName} - Table: ${guest.tableNumber}\n`;
         });
         resultsBox.innerHTML = message;
-        console.log('Multiple matches found.'); // Debug log
-        // Do not blink for multiple results, as it's unclear which to highlight.
+        console.log('Multiple matches found. Displaying all.');
     } else {
         resultsBox.innerHTML = 'Guest Not Found. Please check spelling.';
-        console.log('No matches found.'); // Debug log
+        console.log('No matches found for input:', inputName);
     }
 }
 
@@ -160,13 +167,13 @@ function blinkTableOnMap(tableNumber) {
 
     const coords = TABLE_COORDINATES[tableNumber];
     if (!coords) {
-        console.warn(`Coordinates for Table ${tableNumber} not found in TABLE_COORDINATES.`); // Debug log
+        console.warn(`Coordinates for Table ${tableNumber} not found in TABLE_COORDINATES. Cannot blink.`); // Debug log
         return;
     }
 
     const overlay = document.createElement('div');
     overlay.className = 'blinking-overlay';
-
+    
     // Scale coordinates based on actual image size vs. coordinate source (if applicable)
     // For simplicity, assuming image is at its natural size or scaled by CSS `max-width: 100%`
     const imgWidth = layoutImage.naturalWidth;
